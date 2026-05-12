@@ -1,34 +1,45 @@
-{ pkgs ? import <nixpkgs> { }, lib, ... }: pkgs.stdenv.mkDerivation rec {
+{
+  lib,
+  stdenvNoCC,
+  makeWrapper,
+  quickshell,
+  grim,
+  imagemagick,
+  wl-clipboard,
+}:
+stdenvNoCC.mkDerivation {
   pname = "hyprquickshot";
   version = "0.1.0";
 
-  nativeBuildInputs = with pkgs; [
-    makeWrapper
-  ];
-  buildInputs = with pkgs; [
-    quickshell
-    grim
-    imagemagick
-    wl-clipboard
-  ];
+  src = lib.cleanSource ./.;
 
-  src = pkgs.lib.cleanSource ./.;
+  nativeBuildInputs = [ makeWrapper ];
+  dontBuild = true;
 
   installPhase = ''
+    runHook preInstall
+
+    mkdir -p $out/share/hyprquickshot
+    cp -r icons shaders src shell.qml $out/share/hyprquickshot/
+
     mkdir -p $out/bin
+    makeWrapper ${quickshell}/bin/quickshell $out/bin/hyprquickshot \
+      --add-flags "-p $out/share/hyprquickshot" \
+      --prefix PATH : ${
+        lib.makeBinPath [
+          grim
+          imagemagick
+          wl-clipboard
+        ]
+      }
 
-    mv icons shaders src shell.qml $out
-
-    echo "#!/usr/bin/env sh" > $out/bin/hyprquickshot
-    echo "quickshell -p $out" >> $out/bin/hyprquickshot
-    chmod +x $out/bin/hyprquickshot
-
-    wrapProgram $out/bin/hyprquickshot \
-      --set PATH "$PATH:${lib.makeBinPath [
-        pkgs.quickshell
-        pkgs.grim
-        pkgs.imagemagick
-        pkgs.wl-clipboard
-      ]}"
+    runHook postInstall
   '';
+
+  meta = {
+    description = "A screenshot utility for Hyprland built with Quickshell";
+    license = lib.licenses.mit;
+    platforms = lib.platforms.linux;
+    mainProgram = "hyprquickshot";
+  };
 }

@@ -1,19 +1,18 @@
 {
-  description = "Flake of a cool screenshot utility for Hyprland";
+  description = "A screenshot utility for Hyprland";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }: 
-    flake-utils.lib.eachDefaultSystem(system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in {
-          packages = rec {
-            default = nixpkgs.legacyPackages.${system}.callPackage ./. { };
-          };
-      }
-    );
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (system: {
+      packages.default = nixpkgs.legacyPackages.${system}.callPackage ./. { };
+    });
 }
