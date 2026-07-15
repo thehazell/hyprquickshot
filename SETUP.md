@@ -9,4 +9,7 @@ quickshell -c hyprquickshot
 ```
 
 ## Move it
-You can also just move the entire hyprquickshot tool into `~/.config/quickshell/`, if you like.
+If you don't plan on modifying the source, you can instead copy or move the hyprquickshot directory directly into ~/.config/quickshell/. Once it's there, you can launch it the same way:
+```shell
+quickshell -c hyprquickshot
+```
