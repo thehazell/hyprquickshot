@@ -1,6 +1,6 @@
-import QtQuick 
-import QtQuick.Controls 
-import Quickshell 
+import QtQuick
+import QtQuick.Controls
+import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import Quickshell.Widgets
@@ -18,7 +18,7 @@ FreezeScreen {
     Settings {
         id: settings
         category: "Hyprquickshot"
-        property bool saveToDisk: true 
+        property bool saveToDisk: true
     }
 
     Connections {
@@ -57,7 +57,7 @@ FreezeScreen {
             Qt.quit()
         }
     }
- 
+
     Timer {
         id: showTimer
         interval: 50
@@ -65,7 +65,7 @@ FreezeScreen {
         repeat: false
         onTriggered: root.visible = true
     }
- 
+
     Process {
         id: screenshotProcess
         running: false
@@ -97,11 +97,20 @@ FreezeScreen {
 
         const outputPath = settings.saveToDisk ? `${picturesDir}/screenshot-${timestamp}.png` : root.tempPath
 
+        const title = "Screenshot taken!"
+
+
+        const body = settings.saveToDisk
+            ? "Saved to disk and copied to clipboard."
+            : "Copied to clipboard."
+
         screenshotProcess.command = ["sh", "-c",
             `magick "${tempPath}" -crop ${scaledWidth}x${scaledHeight}+${scaledX}+${scaledY} "${outputPath}" && ` +
-            `wl-copy < "${outputPath}" && ` +
-            `rm "${tempPath}"`
-        ]
+             `wl-copy < "${outputPath}" && { ` +
+             `notify-send -i "camera" "${title}" "${body}"; ` +
+             `rm "${tempPath}"; ` +
+            `}`
+         ]
 
         screenshotProcess.running = true
         root.visible = false
@@ -111,55 +120,55 @@ FreezeScreen {
         visible: mode === "region"
         id: regionSelector
         anchors.fill: parent
- 
+
         dimOpacity: 0.6
         borderRadius: 10.0
         outlineThickness: 2.0
- 
+
         onRegionSelected: (x, y, width, height) => {
             processScreenshot(x, y, width, height)
         }
     }
- 
+
     WindowSelector {
         visible: mode === "window"
         id: windowSelector
         anchors.fill: parent
- 
+
         monitor: root.hyprlandMonitor
         dimOpacity: 0.6
         borderRadius: 10.0
         outlineThickness: 2.0
- 
+
         onRegionSelected: (x, y, width, height) => {
             processScreenshot(x, y, width, height)
         }
     }
- 
+
     WrapperRectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 40
 
-        color: Qt.rgba(0.1, 0.1, 0.1, 0.8)
+        color: "#551a1126"
         radius: 12
         margin: 8
 
 		Row {
 			id: settingRow
 			spacing: 25
-		
+
 			Row {
 				id: buttonRow
 				spacing: 8
-	 
+
 				Repeater {
 					model: [
 						{ mode: "region", icon: "region" },
 						{ mode: "window", icon: "window" },
 						{ mode: "screen", icon: "screen" }
 					]
-	 
+
 					Button {
 						id: modeButton
 						implicitWidth: 48
@@ -168,10 +177,10 @@ FreezeScreen {
 						background: Rectangle {
 							radius: 8
 							color: {
-								if(mode === modelData.mode) return Qt.rgba(0.3, 0.4, 0.7, 0.5)
-								if (modeButton.hovered) return Qt.rgba(0.4, 0.4, 0.4, 0.5)
+								if(mode === modelData.mode) return "#CCD96AA7"
+								if (modeButton.hovered) return "#88E8A2C8"
 
-								return Qt.rgba(0.3, 0.3, 0.35, 0.5)
+								return "#44332244"
 							}
 
 							Behavior on color { ColorAnimation { duration: 100 } }
@@ -198,7 +207,7 @@ FreezeScreen {
 					}
 				}
 			}
-			
+
 			Row {
 				id: switchRow
 				spacing: 8
@@ -206,7 +215,7 @@ FreezeScreen {
 
 				Text {
 					text: "Save to disk"
-					color: "#ffffff"
+					color: "#F7D7E9"
 					font.pixelSize: 14
 					verticalAlignment: Text.AlignVCenter
 					anchors.verticalCenter: parent.verticalCenter
