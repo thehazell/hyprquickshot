@@ -107,7 +107,7 @@ FreezeScreen {
         screenshotProcess.command = ["sh", "-c",
             `magick "${tempPath}" -crop ${scaledWidth}x${scaledHeight}+${scaledX}+${scaledY} "${outputPath}" && ` +
              `wl-copy < "${outputPath}" && { ` +
-             `notify-send -i "camera" "${title}" "${body}"; ` +
+             `notify-send -i "shotwell" "${title}" "${body}"; ` +
              `rm "${tempPath}"; ` +
             `}`
          ]
