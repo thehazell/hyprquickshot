@@ -9,6 +9,8 @@ import QtCore
 
 import "src"
 
+pragma ComponentBehavior: Bound
+
 FreezeScreen {
     id: root
     visible: false
@@ -23,7 +25,7 @@ FreezeScreen {
 
     Connections {
         target: Hyprland
-        enabled: activeScreen === null
+        enabled: root.activeScreen === null
 
         function onFocusedMonitorChanged() {
             const monitor = Hyprland.focusedMonitor
@@ -31,11 +33,11 @@ FreezeScreen {
 
             for (const screen of Quickshell.screens) {
                 if (screen.name === monitor.name) {
-                    activeScreen = screen
+                    root.activeScreen = screen
 
                     const timestamp = Date.now()
                     const path = Quickshell.cachePath(`screenshot-${timestamp}.png`)
-                    tempPath = path
+                    root.tempPath = path
                     Quickshell.execDetached(["grim", "-g", `${screen.x},${screen.y} ${screen.width}x${screen.height}`, path])
                     showTimer.start()
                 }
@@ -43,7 +45,7 @@ FreezeScreen {
         }
     }
 
-    targetScreen: activeScreen
+    targetScreen: root.activeScreen
 
     property var hyprlandMonitor: Hyprland.focusedMonitor
     property string tempPath
@@ -53,7 +55,7 @@ FreezeScreen {
     Shortcut {
         sequence: "Escape"
         onActivated: () => {
-            Quickshell.execDetached(["rm", tempPath])
+            Quickshell.execDetached(["rm", root.tempPath])
             Qt.quit()
         }
     }
@@ -70,7 +72,7 @@ FreezeScreen {
         id: screenshotProcess
         running: false
 
-        onExited: () => {
+        function onExited() {
             Qt.quit()
         }
 
@@ -99,7 +101,6 @@ FreezeScreen {
 
         const title = "Screenshot taken!"
 
-
         const body = settings.saveToDisk
             ? "Saved to disk and copied to clipboard."
             : "Copied to clipboard."
@@ -107,7 +108,7 @@ FreezeScreen {
         screenshotProcess.command = ["sh", "-c",
             `magick "${tempPath}" -crop ${scaledWidth}x${scaledHeight}+${scaledX}+${scaledY} "${outputPath}" && ` +
              `wl-copy < "${outputPath}" && { ` +
-             `notify-send -i "shotwell" "${title}" "${body}"; ` +
+             `notify-send -i "shotwell" -a "Hyprcap" "${title}" "${body}"; ` +
              `rm "${tempPath}"; ` +
             `}`
          ]
@@ -117,7 +118,7 @@ FreezeScreen {
     }
 
     RegionSelector {
-        visible: mode === "region"
+        visible: root.mode === "region"
         id: regionSelector
         anchors.fill: parent
 
@@ -126,12 +127,12 @@ FreezeScreen {
         outlineThickness: 2.0
 
         onRegionSelected: (x, y, width, height) => {
-            processScreenshot(x, y, width, height)
+            root.processScreenshot(x, y, width, height)
         }
     }
 
     WindowSelector {
-        visible: mode === "window"
+        visible: root.mode === "window"
         id: windowSelector
         anchors.fill: parent
 
@@ -141,7 +142,7 @@ FreezeScreen {
         outlineThickness: 2.0
 
         onRegionSelected: (x, y, width, height) => {
-            processScreenshot(x, y, width, height)
+            root.processScreenshot(x, y, width, height)
         }
     }
 
@@ -170,40 +171,45 @@ FreezeScreen {
 					]
 
 					Button {
-						id: modeButton
-						implicitWidth: 48
-						implicitHeight: 48
+                        id: modeButton
 
-						background: Rectangle {
-							radius: 8
-							color: {
-								if(mode === modelData.mode) return "#CCD96AA7"
-								if (modeButton.hovered) return "#88E8A2C8"
+                        required property var modelData
 
-								return "#44332244"
-							}
+                        implicitWidth: 48
+                        implicitHeight: 48
 
-							Behavior on color { ColorAnimation { duration: 100 } }
-						}
+                        background: Rectangle {
+                            radius: 8
+                            color: {
+                                if (root.mode === modeButton.modelData.mode)
+                                    return "#CCD96AA7"
+                                if (modeButton.hovered)
+                                    return "#88E8A2C8"
 
-						contentItem: Item {
-							anchors.fill: parent
+                                return "#44332244"
+                            }
 
-							Image {
-								anchors.centerIn: parent
-								width: 24
-								height: 24
-								source: Quickshell.shellPath(`icons/${modelData.icon}.svg`)
-								fillMode: Image.PreserveAspectFit
-							}
-						}
+                            Behavior on color { ColorAnimation { duration: 100 } }
+                        }
 
-						onClicked: {
-							root.mode = modelData.mode
-							if (modelData.mode === "screen") {
-								processScreenshot(0, 0, root.targetScreen.width, root.targetScreen.height)
-							}
-						}
+                        contentItem: Item {
+                            anchors.fill: parent
+
+                            Image {
+                                anchors.centerIn: parent
+                                width: 24
+                                height: 24
+                                source: Quickshell.shellPath(`icons/${modeButton.modelData.icon}.svg`)
+                                fillMode: Image.PreserveAspectFit
+                            }
+                        }
+
+                        onClicked: {
+                            root.mode = modeButton.modelData.mode
+                            if (modeButton.modelData.mode === "screen") {
+                                root.processScreenshot(0, 0, root.targetScreen.width, root.targetScreen.height)
+                            }
+                        }
 					}
 				}
 			}
